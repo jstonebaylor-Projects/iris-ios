@@ -38,6 +38,14 @@ public struct IrisClient {
         self.transport = session
     }
 
+    /// Only send an Authorization header when a token is set. An empty token
+    /// would become "Bearer " which Iris's strict auth rejects as 401; omitting
+    /// the header makes Iris treat the caller as the default local user.
+    private func applyAuth(to req: inout URLRequest) {
+        guard !token.isEmpty else { return }
+        applyAuth(to: &req)
+    }
+
     // MARK: - Request builders
 
     /// POST /v1/voice/stream  — NDJSON streaming endpoint.
@@ -49,7 +57,7 @@ public struct IrisClient {
         let url = baseURL.appendingPathComponent("v1/voice/stream")
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
-        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        applyAuth(to: &req)
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let body: [String: Any] = [
             "message": message,
@@ -67,7 +75,7 @@ public struct IrisClient {
         comps.queryItems = [URLQueryItem(name: "content_type", value: "audio/mp4")]
         var req = URLRequest(url: comps.url!)
         req.httpMethod = "POST"
-        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        applyAuth(to: &req)
         req.setValue("audio/mp4", forHTTPHeaderField: "Content-Type")
         req.httpBody = audio
         return req
@@ -78,7 +86,7 @@ public struct IrisClient {
         let url = baseURL.appendingPathComponent("v1/push/register")
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
-        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        applyAuth(to: &req)
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let body: [String: Any] = [
             "device_token": deviceToken,
