@@ -6,6 +6,9 @@ public enum StreamEvent: Equatable {
     case text(delta: String)
     /// An audio chunk (base64-encoded).
     case audio(seq: Int, b64: String, format: String)
+    /// Boundary marking the start of a new self-contained audio segment
+    /// (a fresh mp3 — the player must reset its parser here, but keep playing).
+    case audioSegment
     /// Stream complete.
     case done(conversationID: String)
     /// Server-side error.
@@ -37,6 +40,8 @@ extension StreamEvent: Decodable {
             let b64    = try container.decode(String.self, forKey: .b64)
             let format = try container.decode(String.self, forKey: .format)
             self = .audio(seq: seq, b64: b64, format: format)
+        case "audio_segment":
+            self = .audioSegment
         case "done":
             let cid = try container.decode(String.self, forKey: .conversationID)
             self = .done(conversationID: cid)

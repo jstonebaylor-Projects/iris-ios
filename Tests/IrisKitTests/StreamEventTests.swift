@@ -17,6 +17,12 @@ import Testing
         #expect(event == .audio(seq: 0, b64: "AAAA", format: "mp3"))
     }
 
+    @Test func decodeAudioSegmentEvent() throws {
+        let json = #"{"type":"audio_segment"}"#.data(using: .utf8)!
+        let event = try decoder.decode(StreamEvent.self, from: json)
+        #expect(event == .audioSegment)
+    }
+
     @Test func decodeDoneEvent() throws {
         let json = #"{"type":"done","conversation_id":"conv-42"}"#.data(using: .utf8)!
         let event = try decoder.decode(StreamEvent.self, from: json)
