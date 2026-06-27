@@ -25,6 +25,14 @@ public struct ConversationStore {
         self.messages = []
     }
 
+    /// Rehydrate a store from a previously persisted conversation, restoring
+    /// both the committed messages and the conversation id (so the next turn
+    /// continues the same server-side conversation).
+    public init(conversation: Conversation) {
+        self.conversationID = conversation.id
+        self.messages = conversation.messages
+    }
+
     // MARK: - Read
 
     /// The committed conversation snapshot.

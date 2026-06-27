@@ -20,6 +20,24 @@ import Testing
         #expect(conv.id == "conv_1")
     }
 
+    @Test func rehydrateFromConversationRestoresMessagesAndID() {
+        let saved = Conversation(id: "conv_42", messages: [
+            Message(id: "m1", role: "user", text: "earlier"),
+            Message(id: "m2", role: "assistant", text: "reply"),
+        ])
+        var store = ConversationStore(conversation: saved)
+
+        #expect(store.conversation.id == "conv_42")
+        #expect(store.conversation.messages.count == 2)
+
+        // Next turn continues the SAME conversation id.
+        store.send(userMessage: "again")
+        store.apply(.text(delta: "ok"))
+        store.apply(.done(conversationID: "conv_42"))
+        #expect(store.conversation.id == "conv_42")
+        #expect(store.conversation.messages.count == 4)
+    }
+
     @Test func errorMidTurnPreservesUserMessageAndPriorMessages() {
         var store = ConversationStore()
         store.send(userMessage: "hi")
