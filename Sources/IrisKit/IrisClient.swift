@@ -43,7 +43,7 @@ public struct IrisClient {
     /// the header makes Iris treat the caller as the default local user.
     private func applyAuth(to req: inout URLRequest) {
         guard !token.isEmpty else { return }
-        applyAuth(to: &req)
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
     }
 
     // MARK: - Request builders
