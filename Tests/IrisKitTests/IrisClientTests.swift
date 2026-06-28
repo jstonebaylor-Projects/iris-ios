@@ -77,6 +77,22 @@ final class MockTransport: HTTPTransport {
         #expect(req.value(forHTTPHeaderField: "Content-Type") == "audio/mp4")
     }
 
+    // MARK: - notifications
+
+    @Test func notificationsRequestURL() {
+        let req = client.notificationsRequest()
+        #expect(req.url?.path == "/v1/notifications")
+        #expect(req.httpMethod == "GET")
+    }
+
+    @Test func notificationsDecodes() async throws {
+        mock.responseData = #"{"messages":[{"ts":"t1","source":"sensei","title":"Sensei","body":"Train harder.","url":""},{"ts":"t2","source":"intel","title":"Intel Manager","body":"Update.","url":"https://x"}]}"#.data(using: .utf8)!
+        let msgs = try await client.notifications()
+        #expect(msgs.count == 2)
+        #expect(msgs[0].source == "sensei")
+        #expect(msgs[1].url == "https://x")
+    }
+
     // MARK: - registerPushRequest
 
     @Test func registerPushRequestURL() {

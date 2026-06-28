@@ -25,6 +25,10 @@ public struct TranscribeResponse: Codable {
     public let language: String
 }
 
+public struct NotificationsResponse: Codable {
+    public let messages: [AgentMessage]
+}
+
 // MARK: - Client
 
 public struct IrisClient {
@@ -103,5 +107,20 @@ public struct IrisClient {
         let req = transcribeRequest(audio: audio)
         let (data, _) = try await transport.send(req)
         return try JSONDecoder().decode(TranscribeResponse.self, from: data)
+    }
+
+    /// GET /v1/notifications — the agent messages for the in-app Updates inbox.
+    public func notificationsRequest() -> URLRequest {
+        let url = baseURL.appendingPathComponent("v1/notifications")
+        var req = URLRequest(url: url)
+        req.httpMethod = "GET"
+        applyAuth(to: &req)
+        return req
+    }
+
+    /// Fetch the recent agent messages (newest first).
+    public func notifications() async throws -> [AgentMessage] {
+        let (data, _) = try await transport.send(notificationsRequest())
+        return try JSONDecoder().decode(NotificationsResponse.self, from: data).messages
     }
 }
