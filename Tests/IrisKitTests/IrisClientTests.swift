@@ -93,6 +93,17 @@ final class MockTransport: HTTPTransport {
         #expect(msgs[1].url == "https://x")
     }
 
+    // MARK: - approvalDecisionRequest
+
+    @Test func approvalDecisionRequestBuilds() throws {
+        let req = client.approvalDecisionRequest(id: "appr_1", decision: "approved")
+        #expect(req.url?.path == "/v1/approvals/appr_1")
+        #expect(req.httpMethod == "POST")
+        let body = try #require(req.httpBody)
+        let json = try #require(JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(json["decision"] as? String == "approved")
+    }
+
     // MARK: - registerPushRequest
 
     @Test func registerPushRequestURL() {

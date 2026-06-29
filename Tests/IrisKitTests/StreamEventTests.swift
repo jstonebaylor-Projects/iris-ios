@@ -23,6 +23,12 @@ import Testing
         #expect(event == .audioSegment)
     }
 
+    @Test func decodeApprovalEvent() throws {
+        let json = #"{"type":"approval","approval":{"request_id":"appr_1","tool_name":"unlock_door","intent":"Unlock the front door","summary":"Schlage front door"}}"#.data(using: .utf8)!
+        let event = try decoder.decode(StreamEvent.self, from: json)
+        #expect(event == .approval(ApprovalInfo(id: "appr_1", toolName: "unlock_door", intent: "Unlock the front door", summary: "Schlage front door")))
+    }
+
     @Test func decodeDoneEvent() throws {
         let json = #"{"type":"done","conversation_id":"conv-42"}"#.data(using: .utf8)!
         let event = try decoder.decode(StreamEvent.self, from: json)

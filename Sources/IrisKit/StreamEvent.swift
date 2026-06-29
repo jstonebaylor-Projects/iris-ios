@@ -1,5 +1,27 @@
 import Foundation
 
+/// A write-capable tool's pending approval request (door unlock, send email, …).
+public struct ApprovalInfo: Codable, Equatable, Identifiable {
+    public let id: String        // server's request_id
+    public let toolName: String
+    public let intent: String
+    public let summary: String
+
+    enum CodingKeys: String, CodingKey {
+        case id = "request_id"
+        case toolName = "tool_name"
+        case intent
+        case summary
+    }
+
+    public init(id: String, toolName: String, intent: String, summary: String) {
+        self.id = id
+        self.toolName = toolName
+        self.intent = intent
+        self.summary = summary
+    }
+}
+
 /// Events streamed from `/v1/voice/stream` as NDJSON.
 public enum StreamEvent: Equatable {
     /// A text delta fragment.
@@ -9,6 +31,8 @@ public enum StreamEvent: Equatable {
     /// Boundary marking the start of a new self-contained audio segment
     /// (a fresh mp3 — the player must reset its parser here, but keep playing).
     case audioSegment
+    /// A write-capable tool needs Jeff's approval before it runs.
+    case approval(ApprovalInfo)
     /// Stream complete.
     case done(conversationID: String)
     /// Server-side error.
@@ -26,6 +50,7 @@ extension StreamEvent: Decodable {
         case format
         case conversationID = "conversation_id"
         case code
+        case approval
     }
 
     public init(from decoder: Decoder) throws {
@@ -42,6 +67,8 @@ extension StreamEvent: Decodable {
             self = .audio(seq: seq, b64: b64, format: format)
         case "audio_segment":
             self = .audioSegment
+        case "approval":
+            self = .approval(try container.decode(ApprovalInfo.self, forKey: .approval))
         case "done":
             let cid = try container.decode(String.self, forKey: .conversationID)
             self = .done(conversationID: cid)

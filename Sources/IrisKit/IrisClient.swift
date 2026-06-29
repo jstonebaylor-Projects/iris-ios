@@ -85,6 +85,25 @@ public struct IrisClient {
         return req
     }
 
+    /// POST /v1/approvals/{id}  — record an approval decision
+    /// ("approved" | "declined" | "cancelled").
+    public func approvalDecisionRequest(id: String, decision: String) -> URLRequest {
+        let url = baseURL.appendingPathComponent("v1/approvals/\(id)")
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        applyAuth(to: &req)
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try? JSONSerialization.data(withJSONObject: ["decision": decision])
+        return req
+    }
+
+    /// Record a decision on a pending approval. True if the server accepted it (HTTP 200).
+    @discardableResult
+    public func decideApproval(id: String, decision: String) async throws -> Bool {
+        let (_, response) = try await transport.send(approvalDecisionRequest(id: id, decision: decision))
+        return response.statusCode == 200
+    }
+
     /// POST /v1/push/register  — device token registration.
     public func registerPushRequest(deviceToken: String) -> URLRequest {
         let url = baseURL.appendingPathComponent("v1/push/register")
