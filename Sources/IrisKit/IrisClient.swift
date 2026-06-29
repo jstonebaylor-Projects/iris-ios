@@ -128,6 +128,20 @@ public struct IrisClient {
         return try JSONDecoder().decode(TranscribeResponse.self, from: data)
     }
 
+    /// Perform an agent-message action button (e.g. Approve/Reject a Postmaster
+    /// draft): POST its `body` to its absolute `url`. True on a 2xx response.
+    @discardableResult
+    public func performAction(_ action: AgentAction) async throws -> Bool {
+        guard let url = URL(string: action.url) else { return false }
+        var req = URLRequest(url: url)
+        req.httpMethod = action.method.isEmpty ? "POST" : action.method
+        applyAuth(to: &req)
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try? JSONSerialization.data(withJSONObject: action.body)
+        let (_, response) = try await transport.send(req)
+        return (200...299).contains(response.statusCode)
+    }
+
     /// GET /v1/notifications — the agent messages for the in-app Updates inbox.
     public func notificationsRequest() -> URLRequest {
         let url = baseURL.appendingPathComponent("v1/notifications")

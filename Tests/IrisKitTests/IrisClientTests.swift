@@ -93,6 +93,15 @@ final class MockTransport: HTTPTransport {
         #expect(msgs[1].url == "https://x")
     }
 
+    @Test func notificationsDecodeActions() async throws {
+        mock.responseData = #"{"messages":[{"ts":"t1","source":"postmaster","title":"Draft ready","body":"Reply to x","url":"","actions":[{"label":"Approve & send","url":"http://k/postmaster/drafts/d1/decision","method":"POST","body":{"decision":"approve","thumbs":"up"}},{"label":"Reject","url":"http://k/postmaster/drafts/d1/decision","body":{"decision":"reject","thumbs":"down"}}]}]}"#.data(using: .utf8)!
+        let msgs = try await client.notifications()
+        #expect(msgs[0].actions.count == 2)
+        #expect(msgs[0].actions[0].label == "Approve & send")
+        #expect(msgs[0].actions[0].body["decision"] == "approve")
+        #expect(msgs[0].actions[1].method == "POST")   // defaulted
+    }
+
     // MARK: - approvalDecisionRequest
 
     @Test func approvalDecisionRequestBuilds() throws {
