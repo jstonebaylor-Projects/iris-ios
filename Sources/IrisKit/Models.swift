@@ -19,17 +19,21 @@ public struct AgentAction: Codable, Equatable, Identifiable {
     public let url: String
     public let method: String
     public let body: [String: String]
+    /// "resolve" (default) hides the message on success (Approve/Reject);
+    /// "rate" records a 👍/👎 without resolving the card.
+    public let kind: String
 
     public var id: String { label + "|" + url }
 
-    public init(label: String, url: String, method: String = "POST", body: [String: String] = [:]) {
+    public init(label: String, url: String, method: String = "POST", body: [String: String] = [:], kind: String = "resolve") {
         self.label = label
         self.url = url
         self.method = method
         self.body = body
+        self.kind = kind
     }
 
-    enum CodingKeys: String, CodingKey { case label, url, method, body }
+    enum CodingKeys: String, CodingKey { case label, url, method, body, kind }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -37,6 +41,7 @@ public struct AgentAction: Codable, Equatable, Identifiable {
         url = try c.decode(String.self, forKey: .url)
         method = try c.decodeIfPresent(String.self, forKey: .method) ?? "POST"
         body = try c.decodeIfPresent([String: String].self, forKey: .body) ?? [:]
+        kind = try c.decodeIfPresent(String.self, forKey: .kind) ?? "resolve"
     }
 }
 
