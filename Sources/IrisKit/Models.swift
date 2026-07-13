@@ -1,14 +1,50 @@
 import Foundation
 
+/// A reference to an image attached to a chat message. The original bytes
+/// are cached locally (`localFilename`, relative to the app's own
+/// Documents/attachments/ directory) — the backend has no endpoint to
+/// re-fetch attachment bytes, so scrollback reappearance after relaunch is
+/// satisfied entirely client-side. `id` is the server-assigned attachment
+/// id (kept for parity with the backend log, not used to re-fetch).
+public struct AttachmentRef: Codable, Equatable {
+    public let id: String
+    public let mimeType: String
+    public let localFilename: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case mimeType = "mime_type"
+        case localFilename = "local_filename"
+    }
+
+    public init(id: String, mimeType: String, localFilename: String) {
+        self.id = id
+        self.mimeType = mimeType
+        self.localFilename = localFilename
+    }
+}
+
 public struct Message: Codable, Equatable {
     public let id: String
     public let role: String   // "user" | "assistant"
     public let text: String
+    public let attachments: [AttachmentRef]
 
-    public init(id: String, role: String, text: String) {
+    public init(id: String, role: String, text: String, attachments: [AttachmentRef] = []) {
         self.id = id
         self.role = role
         self.text = text
+        self.attachments = attachments
+    }
+
+    enum CodingKeys: String, CodingKey { case id, role, text, attachments }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        role = try c.decode(String.self, forKey: .role)
+        text = try c.decode(String.self, forKey: .text)
+        attachments = try c.decodeIfPresent([AttachmentRef].self, forKey: .attachments) ?? []
     }
 }
 
