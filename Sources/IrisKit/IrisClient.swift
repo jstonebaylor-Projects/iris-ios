@@ -29,6 +29,19 @@ public struct NotificationsResponse: Codable {
     public let messages: [AgentMessage]
 }
 
+/// One attachment to upload with a chat/voice-stream request.
+public struct OutgoingAttachment {
+    public let filename: String
+    public let mimeType: String
+    public let dataBase64: String
+
+    public init(filename: String, mimeType: String, dataBase64: String) {
+        self.filename = filename
+        self.mimeType = mimeType
+        self.dataBase64 = dataBase64
+    }
+}
+
 // MARK: - Client
 
 public struct IrisClient {
@@ -56,18 +69,24 @@ public struct IrisClient {
     public func voiceStreamRequest(
         message: String,
         conversationID: String,
-        voice: Bool
+        voice: Bool,
+        attachments: [OutgoingAttachment] = []
     ) -> URLRequest {
         let url = baseURL.appendingPathComponent("v1/voice/stream")
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         applyAuth(to: &req)
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "message": message,
             "conversation_id": conversationID,
             "voice": voice
         ]
+        if !attachments.isEmpty {
+            body["attachments"] = attachments.map {
+                ["filename": $0.filename, "mime_type": $0.mimeType, "data_base64": $0.dataBase64]
+            }
+        }
         req.httpBody = try? JSONSerialization.data(withJSONObject: body)
         return req
     }
@@ -102,6 +121,25 @@ public struct IrisClient {
     public func decideApproval(id: String, decision: String) async throws -> Bool {
         let (_, response) = try await transport.send(approvalDecisionRequest(id: id, decision: decision))
         return response.statusCode == 200
+    }
+
+    /// Decide every item in a batch approval. Calls the existing per-id decide
+    /// endpoint once per id, concurrently — there is no separate batch-decide
+    /// route; batching is a client-side presentation concept only.
+    public func decideApprovals(ids: [String], decision: String) async throws -> [Bool] {
+        try await withThrowingTaskGroup(of: (Int, Bool).self) { group in
+            for (index, id) in ids.enumerated() {
+                group.addTask {
+                    let ok = try await self.decideApproval(id: id, decision: decision)
+                    return (index, ok)
+                }
+            }
+            var results = [Bool](repeating: false, count: ids.count)
+            for try await (index, ok) in group {
+                results[index] = ok
+            }
+            return results
+        }
     }
 
     /// POST /v1/push/register  — device token registration.

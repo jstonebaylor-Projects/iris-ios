@@ -132,4 +132,35 @@ final class MockTransport: HTTPTransport {
         let req = client.registerPushRequest(deviceToken: "tok")
         #expect(req.value(forHTTPHeaderField: "Authorization") == "Bearer test-token")
     }
+
+    // MARK: - voiceStreamRequest attachments
+
+    @Test func voiceStreamRequestOmitsAttachmentsKeyWhenNoneGiven() throws {
+        let req = client.voiceStreamRequest(message: "hi", conversationID: "c1", voice: false)
+        let body = try #require(req.httpBody)
+        let json = try #require(JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(json["attachments"] == nil)
+    }
+
+    @Test func voiceStreamRequestIncludesAttachments() throws {
+        let attachment = OutgoingAttachment(filename: "x.png", mimeType: "image/png", dataBase64: "QUJD")
+        let req = client.voiceStreamRequest(message: "look", conversationID: "c1", voice: false, attachments: [attachment])
+        let body = try #require(req.httpBody)
+        let json = try #require(JSONSerialization.jsonObject(with: body) as? [String: Any])
+        let attachments = try #require(json["attachments"] as? [[String: Any]])
+        #expect(attachments.count == 1)
+        #expect(attachments[0]["filename"] as? String == "x.png")
+        #expect(attachments[0]["mime_type"] as? String == "image/png")
+        #expect(attachments[0]["data_base64"] as? String == "QUJD")
+    }
+
+    // MARK: - decideApprovals
+
+    @Test func decideApprovalsCallsDecideOncePerID() async throws {
+        mock.responseStatus = 200
+        let results = try await client.decideApprovals(ids: ["appr_1", "appr_2"], decision: "approved")
+        #expect(results == [true, true])
+        // Last request recorded by the mock is for the last id in the batch.
+        #expect(mock.lastRequest?.url?.path == "/v1/approvals/appr_2")
+    }
 }
