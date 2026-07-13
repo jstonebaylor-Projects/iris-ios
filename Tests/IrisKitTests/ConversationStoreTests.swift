@@ -105,4 +105,17 @@ import Testing
         store.send(userMessage: "retry")
         #expect(store.lastError == nil)
     }
+
+    @Test func sendWithAttachmentsAttachesThemToTheUserMessage() {
+        var store = ConversationStore()
+        let ref = AttachmentRef(id: "att_1", mimeType: "image/png", localFilename: "att_1.png")
+        store.send(userMessage: "look at this", attachments: [ref])
+        #expect(store.conversation.messages.last?.attachments == [ref])
+    }
+
+    @Test func sendWithNoAttachmentsArgumentDefaultsToEmpty() {
+        var store = ConversationStore()
+        store.send(userMessage: "hello")
+        #expect(store.conversation.messages.last?.attachments == [])
+    }
 }

@@ -48,8 +48,8 @@ public struct ConversationStore {
 
     /// Begin a new user turn. Appends the user message and opens an in-flight window.
     /// Clears `lastError`.
-    public mutating func send(userMessage: String) {
-        messages.append(Message(id: UUID().uuidString, role: "user", text: userMessage))
+    public mutating func send(userMessage: String, attachments: [AttachmentRef] = []) {
+        messages.append(Message(id: UUID().uuidString, role: "user", text: userMessage, attachments: attachments))
         inFlightText = ""
         inFlight = true
         lastError = nil
