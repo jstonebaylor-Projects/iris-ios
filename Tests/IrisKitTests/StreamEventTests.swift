@@ -46,4 +46,20 @@ import Testing
         let event = try decoder.decode(StreamEvent.self, from: json)
         #expect(event == .unknown(type: "ping"))
     }
+
+    @Test func decodeApprovalBatchEvent() throws {
+        let json = #"{"type":"approval_batch","items":[{"request_id":"appr_1","tool_name":"create_event","intent":"Create calendar event","summary":"Team sync, 3pm"},{"request_id":"appr_2","tool_name":"create_event","intent":"Create calendar event","summary":"Dentist, 5pm"}]}"#.data(using: .utf8)!
+        let event = try decoder.decode(StreamEvent.self, from: json)
+        #expect(event == .approvalBatch([
+            ApprovalInfo(id: "appr_1", toolName: "create_event", intent: "Create calendar event", summary: "Team sync, 3pm"),
+            ApprovalInfo(id: "appr_2", toolName: "create_event", intent: "Create calendar event", summary: "Dentist, 5pm"),
+        ]))
+    }
+
+    @Test func decodeApprovalEventStillWorksUnchanged() throws {
+        // Regression: the existing singular event must keep decoding exactly as before.
+        let json = #"{"type":"approval","approval":{"request_id":"appr_1","tool_name":"unlock_door","intent":"Unlock the front door","summary":"Schlage front door"}}"#.data(using: .utf8)!
+        let event = try decoder.decode(StreamEvent.self, from: json)
+        #expect(event == .approval(ApprovalInfo(id: "appr_1", toolName: "unlock_door", intent: "Unlock the front door", summary: "Schlage front door")))
+    }
 }

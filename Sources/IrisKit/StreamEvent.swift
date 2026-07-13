@@ -33,6 +33,10 @@ public enum StreamEvent: Equatable {
     case audioSegment
     /// A write-capable tool needs Jeff's approval before it runs.
     case approval(ApprovalInfo)
+    /// 2+ write-capable tools were proposed in one turn — one card, approve/decline all.
+    /// Fires alongside `.approval` whenever there's at least one proposal (length 1+);
+    /// a single-proposal turn's batch has exactly one item.
+    case approvalBatch([ApprovalInfo])
     /// Stream complete.
     case done(conversationID: String)
     /// Server-side error.
@@ -51,6 +55,7 @@ extension StreamEvent: Decodable {
         case conversationID = "conversation_id"
         case code
         case approval
+        case items
     }
 
     public init(from decoder: Decoder) throws {
@@ -69,6 +74,8 @@ extension StreamEvent: Decodable {
             self = .audioSegment
         case "approval":
             self = .approval(try container.decode(ApprovalInfo.self, forKey: .approval))
+        case "approval_batch":
+            self = .approvalBatch(try container.decode([ApprovalInfo].self, forKey: .items))
         case "done":
             let cid = try container.decode(String.self, forKey: .conversationID)
             self = .done(conversationID: cid)

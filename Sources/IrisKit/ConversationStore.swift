@@ -81,7 +81,7 @@ public struct ConversationStore {
             inFlight = false
             // The partial assistant message is discarded; prior messages are intact.
 
-        case .audio, .audioSegment, .approval, .unknown:
+        case .audio, .audioSegment, .approval, .approvalBatch, .unknown:
             break
         }
     }
